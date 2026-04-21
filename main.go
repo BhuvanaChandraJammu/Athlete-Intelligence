@@ -68,16 +68,48 @@ var tokenStore = &TokenStore{}
 var tokenFile = "tokens.json"
 
 func loadTokens() {
-	data, err := os.ReadFile(tokenFile)
-	if err != nil {
-		return
+	// Load from environment variables (persists across redeploys)
+	tokenStore.WhoopAccessToken = os.Getenv("TOKEN_WHOOP_ACCESS")
+	tokenStore.WhoopRefreshToken = os.Getenv("TOKEN_WHOOP_REFRESH")
+	tokenStore.SpotifyAccessToken = os.Getenv("TOKEN_SPOTIFY_ACCESS")
+	tokenStore.SpotifyRefreshToken = os.Getenv("TOKEN_SPOTIFY_REFRESH")
+	tokenStore.GoogleAccessToken = os.Getenv("TOKEN_GOOGLE_ACCESS")
+	tokenStore.GoogleRefreshToken = os.Getenv("TOKEN_GOOGLE_REFRESH")
+
+	expiryStr := os.Getenv("TOKEN_WHOOP_EXPIRY")
+	if expiryStr != "" {
+		tokenStore.WhoopExpiry, _ = time.Parse(time.RFC3339, expiryStr)
 	}
-	json.Unmarshal(data, tokenStore)
+	expiryStr = os.Getenv("TOKEN_SPOTIFY_EXPIRY")
+	if expiryStr != "" {
+		tokenStore.SpotifyExpiry, _ = time.Parse(time.RFC3339, expiryStr)
+	}
+	expiryStr = os.Getenv("TOKEN_GOOGLE_EXPIRY")
+	if expiryStr != "" {
+		tokenStore.GoogleExpiry, _ = time.Parse(time.RFC3339, expiryStr)
+	}
+	log.Printf("🔑 Tokens loaded — Whoop: %v, Spotify: %v, Google: %v",
+		tokenStore.WhoopAccessToken != "",
+		tokenStore.SpotifyAccessToken != "",
+		tokenStore.GoogleAccessToken != "")
 }
 
 func saveTokens() {
+	// Save tokens to Railway environment variables via Railway API
+	// For now save to file as backup
 	data, _ := json.MarshalIndent(tokenStore, "", "  ")
 	os.WriteFile(tokenFile, data, 0600)
+
+	// Update in-memory env vars so they persist for current session
+	os.Setenv("TOKEN_WHOOP_ACCESS", tokenStore.WhoopAccessToken)
+	os.Setenv("TOKEN_WHOOP_REFRESH", tokenStore.WhoopRefreshToken)
+	os.Setenv("TOKEN_WHOOP_EXPIRY", tokenStore.WhoopExpiry.Format(time.RFC3339))
+	os.Setenv("TOKEN_SPOTIFY_ACCESS", tokenStore.SpotifyAccessToken)
+	os.Setenv("TOKEN_SPOTIFY_REFRESH", tokenStore.SpotifyRefreshToken)
+	os.Setenv("TOKEN_SPOTIFY_EXPIRY", tokenStore.SpotifyExpiry.Format(time.RFC3339))
+	os.Setenv("TOKEN_GOOGLE_ACCESS", tokenStore.GoogleAccessToken)
+	os.Setenv("TOKEN_GOOGLE_REFRESH", tokenStore.GoogleRefreshToken)
+	os.Setenv("TOKEN_GOOGLE_EXPIRY", tokenStore.GoogleExpiry.Format(time.RFC3339))
 }
 
 func main() {
