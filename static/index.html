@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Athlete Intelligence</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#06060f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Athlete Intelligence">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #06060f;
+  --bg2: #0a0a1e;
+  --bg3: #0d0d22;
+  --border: #1c1c38;
+  --text: #e8e8f0;
+  --text2: #888;
+  --text3: #444;
+  --green: #00f5a0;
+  --yellow: #f5c400;
+  --red: #ff4757;
+  --orange: #ff6b35;
+  --purple: #7c6fff;
+  --pink: #ff6b9d;
+  --teal: #4ecdc4;
+  --amber: #ff9f43;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; overflow-x: hidden; }
+.bc { font-family: 'Barlow Condensed', sans-serif; }
+
+/* HEADER */
+.hdr { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #00f5a0, #00b8d9); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.logo-name { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+.logo-date { font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-top: 1px; }
+.live-badge { display: flex; align-items: center; gap: 5px; background: rgba(0,245,160,0.08); border: 1px solid rgba(0,245,160,0.2); border-radius: 20px; padding: 4px 10px; }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* TABS */
+.tabs { display: flex; background: #080818; border-bottom: 1px solid var(--border); padding: 0 16px; gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { background: none; border: none; color: var(--text3); font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 11px 14px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.2s; }
+.tab.active { color: var(--text); border-bottom-color: var(--green); }
+
+/* BODY */
+.body { padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: 600px; margin: 0 auto; padding-bottom: 40px; }
+
+/* CARDS */
+.card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+.card-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+
+/* GRIDS */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+
+/* METRIC CARD */
+.metric { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 12px 8px; text-align: center; }
+.metric-label { font-size: 9px; color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 5px; }
+.metric-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; line-height: 1; }
+.metric-unit { font-size: 9px; color: var(--text3); margin-top: 2px; }
+
+/* RING */
+.ring-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.ring-inner { position: absolute; text-align: center; pointer-events: none; }
+.ring-svg { transform: rotate(-90deg); }
+
+/* ROWS */
+.row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.row:last-child { border-bottom: none; }
+
+/* BARS */
+.bar-bg { background: #161630; border-radius: 4px; height: 5px; overflow: hidden; margin-top: 3px; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 1.4s cubic-bezier(.4,0,.2,1); }
+
+/* INSIGHT BOX */
+.ibox { border-radius: 12px; padding: 13px; border: 1px solid; margin-bottom: 0; }
+.ibox-cat { font-size: 9px; letter-spacing: 2px; font-weight: 700; font-family: 'Barlow Condensed', sans-serif; }
+.ibox-title { font-size: 14px; font-weight: 600; margin-top: 3px; }
+.ibox-text { font-size: 12px; color: var(--text2); line-height: 1.6; margin-top: 6px; }
+.ibox-action { font-size: 12px; background: rgba(255,255,255,0.05); border-radius: 7px; padding: 8px 10px; margin-top: 8px; }
+
+/* BADGE */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+/* BUTTONS */
+.btn { background: var(--green); color: var(--bg); border: none; border-radius: 9px; padding: 11px 20px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 900; letter-spacing: 1px; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+.btn:hover { opacity: 0.85; }
+.btn-s { background: #161630; color: var(--text2); border: 1px solid #252545; border-radius: 7px; padding: 5px 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; }
+.btn-s:hover { background: #202040; color: var(--text); }
+.btn-connect { background: transparent; border: 1px solid var(--green); color: var(--green); border-radius: 9px; padding: 9px 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 6px; transition: all 0.2s; }
+.btn-connect:hover { background: rgba(0,245,160,0.1); }
+
+/* LOADING */
+.spin { width: 30px; height: 30px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: sp 0.8s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 20px; gap: 12px; }
+
+/* CONNECT SCREEN */
+.connect-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+.connect-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.connect-item:last-child { border-bottom: none; }
+.connect-status { font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+
+/* EXERCISE CARD */
+.exercise { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.exercise:last-child { border-bottom: none; }
+.exercise-name { font-size: 13px; font-weight: 500; }
+.exercise-tip { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.exercise-sets { font-size: 14px; font-weight: 700; font-family: 'Barlow Condensed', sans-serif; color: var(--green); text-align: right; }
+.exercise-muscle { font-size: 10px; color: var(--text3); text-align: right; margin-top: 2px; }
+
+/* SLEEP SCHEDULE */
+.sleep-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.sleep-item:last-child { border-bottom: none; }
+
+/* CHART BARS */
+.chart { display: flex; align-items: flex-end; gap: 5px; height: 72px; margin-top: 8px; }
+.chart-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.chart-val { font-size: 8px; transition: color 0.3s; }
+.chart-fill { width: 100%; border-radius: 3px; transition: height 1s ease, background 0.3s; }
+.chart-label { font-size: 9px; }
+
+/* WARNING BOX */
+.warning { background: rgba(255,71,87,0.08); border: 1px solid rgba(255,71,87,0.3); border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #ff8090; }
+
+/* NUTRITION PROGRESS */
+.macro-row { margin-bottom: 10px; }
+.macro-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+.macro-val { font-weight: 600; }
+
+/* PLAYLIST */
+.playlist-card { background: linear-gradient(135deg, #1a0a2e, #0a1a2e); border: 1px solid #2a1a4e; border-radius: 14px; padding: 16px; }
+.track-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.track-row:last-child { border-bottom: none; }
+.track-num { font-size: 11px; color: var(--text3); min-width: 18px; text-align: center; }
+.track-name { font-size: 12px; font-weight: 500; }
+.track-artist { font-size: 11px; color: var(--text3); }
+
+/* DAILY BRIEF */
+.brief { background: linear-gradient(135deg, #0a1a12, #0a0a1e); border: 1px solid rgba(0,245,160,0.2); border-radius: 14px; padding: 16px; }
+.brief-section { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.brief-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.brief-header { font-size: 10px; color: var(--green); letter-spacing: 2px; font-weight: 700; font-family: 'Barlow Condensed', sans-serif; margin-bottom: 6px; }
+.brief-content { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+@media (max-width: 380px) {
+  .g4 { grid-template-columns: repeat(2, 1fr); }
+  .tab { font-size: 10px; padding: 11px 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-name bc">Athlete Intelligence</div>
+      <div class="logo-date" id="hdr-date">Loading...</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      <span style="font-size:10px;color:var(--green);font-family:'Barlow Condensed';font-weight:700;letter-spacing:1px;">LIVE</span>
+    </div>
+    <button class="btn-s" onclick="loadAll()">↻ Sync</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('overview',this)">Overview</button>
+  <button class="tab" onclick="switchTab('workout',this)">Workout</button>
+  <button class="tab" onclick="switchTab('nutrition',this)">Nutrition</button>
+  <button class="tab" onclick="switchTab('sleep',this)">Sleep</button>
+  <button class="tab" onclick="switchTab('insights',this)">AI Insights</button>
+  <button class="tab" onclick="switchTab('connect',this)">Connect</button>
+</div>
+
+<div class="body" id="body">
+  <div class="loading">
+    <div class="spin"></div>
+    <div style="font-size:12px;color:var(--text3);letter-spacing:1px;">Loading your data...</div>
+  </div>
+</div>
+
+<script>
+let state = {};
+let curTab = 'overview';
+
+function rc(v) { return v >= 67 ? '#00f5a0' : v >= 34 ? '#f5c400' : '#ff4757'; }
+function sc(v) { return v >= 14 ? '#ff6b35' : v >= 10 ? '#f5c400' : '#4ecdc4'; }
+function fmt(ms) { const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); return h+'h '+m+'m'; }
+function pct(a,b) { return b ? Math.round(a/b*100) : 0; }
+function ring(val, max, color, size=100, sw=9) {
+  const r = (size-sw)/2, c = 2*Math.PI*r, p = Math.min(val/max,1);
+  return `<svg width="${size}" height="${size}" class="ring-svg">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#161630" stroke-width="${sw}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}"
+      stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}" stroke-linecap="round"
+      style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)"/>
+  </svg>`;
+}
+
+document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+async function loadAll() {
+  try {
+    const res = await fetch('/api/dashboard');
+    state = await res.json();
+    renderTab(curTab);
+  } catch(e) {
+    document.getElementById('body').innerHTML = `
+      <div class="card" style="text-align:center;padding:30px;">
+        <div style="font-size:14px;color:var(--red);margin-bottom:8px;">Failed to load data</div>
+        <div style="font-size:12px;color:var(--text3);">${e.message}</div>
+        <button class="btn" style="margin-top:16px;" onclick="loadAll()">Retry</button>
+      </div>`;
+  }
+}
+
+function switchTab(tab, el) {
+  curTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTab(tab);
+}
+
+function renderTab(tab) {
+  if (tab === 'overview') renderOverview();
+  else if (tab === 'workout') renderWorkout();
+  else if (tab === 'nutrition') renderNutrition();
+  else if (tab === 'sleep') renderSleep();
+  else if (tab === 'insights') renderInsights();
+  else if (tab === 'connect') renderConnect();
+}
+
+function setBody(html) { document.getElementById('body').innerHTML = html; }
+
+function renderOverview() {
+  const w = state.whoop || {};
+  const rec = w.recovery || {};
+  const sl = w.sleep || {};
+  const body = w.body || {};
+  const cycles = w.cycles || [];
+  const weather = state.weather || {};
+
+  const rv = rec.recovery_score || 0;
+  const hrv = Math.round(rec.hrv_rmssd_milli || 0);
+  const rhr = Math.round(rec.resting_heart_rate || 0);
+  const spo2 = (rec.spo2_percentage || 0).toFixed(1);
+  const strain = w.strain || 0;
+  const sleepScore = sl.sleep_performance_percentage || 0;
+  const weight = body.weight_kilogram ? (body.weight_kilogram * 2.205).toFixed(1) : '—';
+  const rcol = rc(rv), scol = sc(strain);
+
+  if (!state.whoop) {
+    setBody(`
+      <div class="brief">
+        <div class="brief-header">WELCOME TO ATHLETE INTELLIGENCE</div>
+        <div class="brief-content">Connect your accounts to get started. Go to the Connect tab to link Whoop, Spotify, and Google Calendar.</div>
+      </div>
+      <button class="btn" onclick="switchTab('connect', document.querySelectorAll('.tab')[5])">Connect Accounts →</button>`);
+    return;
+  }
+
+  setBody(`
+    <div class="g2">
+      <div class="card" style="text-align:center;">
+        <div class="card-title">Recovery</div>
+        <div class="ring-wrap" style="justify-content:center;">
+          ${ring(rv,100,rcol,100,9)}
+          <div class="ring-inner">
+            <div class="metric-val" style="font-size:28px;color:${rcol};">${rv}</div>
+            <div class="metric-unit">%</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:${rcol};font-weight:700;letter-spacing:1.5px;margin-top:8px;">${rv>=67?'OPTIMAL':rv>=34?'MODERATE':'LOW'}</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="card-title">Day Strain</div>
+        <div class="ring-wrap" style="justify-content:center;">
+          ${ring(strain,21,scol,100,9)}
+          <div class="ring-inner">
+            <div class="metric-val" style="font-size:28px;color:${scol};">${strain.toFixed(1)}</div>
+            <div class="metric-unit">/21</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:${scol};font-weight:700;letter-spacing:1.5px;margin-top:8px;">${strain>=14?'STRENUOUS':strain>=10?'MODERATE':'LIGHT'}</div>
+      </div>
+    </div>
+
+    <div class="g4">
+      ${[['HRV',hrv,'ms','#7c6fff'],['RHR',rhr,'bpm','#ff6b9d'],['SpO2',spo2,'%','#4ecdc4'],['Sleep',sleepScore,'%','#00b8d9']].map(([l,v,u,c])=>`
+        <div class="metric">
+          <div class="metric-label">${l}</div>
+          <div class="metric-val" style="font-size:20px;color:${c};">${v}</div>
+          <div class="metric-unit">${u}</div>
+        </div>`).join('')}
+    </div>
+
+    ${weather.description ? `
+    <div class="card" style="display:flex;align-items:center;gap:12px;">
+      <div style="font-size:28px;">${weather.main==='Clear'?'☀️':weather.main==='Clouds'?'☁️':weather.main==='Rain'||weather.main==='Drizzle'?'🌧️':weather.main==='Thunderstorm'?'⛈️':'🌤️'}</div>
+      <div>
+        <div style="font-size:14px;font-weight:500;">${Math.round(weather.temp||0)}°F — ${weather.description}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px;">${weather.recommendation||''}</div>
+      </div>
+    </div>` : ''}
+
+    <div class="card">
+      <div class="card-title">7-Day Strain Trend</div>
+      <div class="chart">
+        ${(cycles||[]).slice().reverse().map((c,i,arr)=>{
+          const v=c?.score?.strain||0, isT=i===arr.length-1;
+          const h=Math.max(4,Math.round((v/21)*72));
+          const d=new Date(c.start).toLocaleDateString('en-US',{weekday:'short'}).slice(0,1);
+          return `<div class="chart-bar">
+            <div class="chart-val" style="color:${isT?sc(v):'#333'}">${v.toFixed(1)}</div>
+            <div class="chart-fill" style="height:${h}px;background:${isT?sc(v):'#1c1c38'};"></div>
+            <div class="chart-label" style="color:${isT?'var(--text)':'#444'}">${d}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Body Metrics</div>
+      <div class="g3">
+        ${[['Weight',`${weight} lbs`,'#ff9f43'],['Max HR',`${body.max_heart_rate||'—'} bpm`,'#ff6b9d'],['Height',`${body.height_meter?(body.height_meter*39.37).toFixed(0):'—'} in`,'#4ecdc4']].map(([l,v,c])=>`
+          <div style="text-align:center;padding:10px;background:var(--bg2);border-radius:10px;">
+            <div style="font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">${l}</div>
+            <div class="metric-val" style="font-size:16px;color:${c};">${v}</div>
+          </div>`).join('')}
+      </div>
+    </div>`);
+}
+
+async function renderWorkout() {
+  setBody(`<div class="loading"><div class="spin"></div><div style="font-size:12px;color:var(--text3);">Building your workout plan...</div></div>`);
+  try {
+    const res = await fetch('/api/workout-plan');
+    const plan = await res.json();
+    const w = state.whoop || {};
+    const rv = w.recovery?.recovery_score || 0;
+    const recColor = rc(rv);
+
+    let html = `
+      <div class="ibox" style="background:${recColor}08;border-color:${recColor}33;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div class="ibox-cat" style="color:${recColor};">TODAY — ${plan.intensity||'MODERATE'}</div>
+          <span class="badge" style="background:${recColor}22;color:${recColor};">REC ${rv}%</span>
+        </div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;">${plan.reason||''}</div>
+      </div>`;
+
+    if (plan.best_window) {
+      html += `
+        <div class="card">
+          <div class="card-title">Best Workout Window</div>
+          <div style="font-size:16px;font-weight:600;color:var(--green);">${plan.best_window}</div>
+          ${plan.weather_note ? `<div style="font-size:11px;color:var(--text3);margin-top:6px;">${plan.weather_note}</div>` : ''}
+        </div>`;
+    }
+
+    if (plan.warnings && plan.warnings.length > 0) {
+      html += plan.warnings.filter(w=>w).map(w=>`<div class="warning">${w}</div>`).join('');
+    }
+
+    if (plan.exercises && plan.exercises.length > 0) {
+      html += `
+        <div class="card">
+          <div class="card-title">Today's Workout — ${plan.focus||'Full Body'}</div>
+          ${plan.exercises.map(e=>`
+            <div class="exercise">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div style="flex:1;">
+                  <div class="exercise-name">${e.name}</div>
+                  <div class="exercise-tip">${e.tip}</div>
+                </div>
+                <div style="min-width:70px;text-align:right;">
+                  <div class="exercise-sets">${e.sets} × ${e.reps}</div>
+                  <div class="exercise-muscle">${e.muscle_group}</div>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>`;
+    }
+
+    html += `
+      <div class="card" style="background:#0a1018;border-color:#0d2530;">
+        <div class="card-title">Nutrition Timing</div>
+        <div class="row">
+          <div>
+            <div style="font-size:13px;font-weight:500;">Pre-Workout Meal</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">${plan.pre_workout_meal||'40g carbs + 20g protein'}</div>
+          </div>
+          <div style="font-size:12px;color:var(--amber);font-weight:600;">${plan.pre_workout_time||'90min before'}</div>
+        </div>
+        <div class="row">
+          <div>
+            <div style="font-size:13px;font-weight:500;">Post-Workout Meal</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">${plan.post_workout_meal||'40g fast carbs + 35g protein'}</div>
+          </div>
+          <div style="font-size:12px;color:var(--green);font-weight:600;">${plan.post_workout_time||'Within 30min'}</div>
+        </div>
+      </div>`;
+
+    if (state.spotify_connected) {
+      html += `
+        <button class="btn" onclick="loadPlaylist('strength')">Generate Workout Playlist 🎵</button>`;
+    } else {
+      html += `
+        <div class="card" style="text-align:center;padding:20px;">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">Connect Spotify to get workout playlists</div>
+          <a href="/spotify/login"><button class="btn-connect">Connect Spotify</button></a>
+        </div>`;
+    }
+
+    setBody(html);
+  } catch(e) {
+    setBody(`<div class="card"><div style="color:var(--red);">Error loading workout plan</div></div>`);
+  }
+}
+
+async function loadPlaylist(type) {
+  const btn = document.querySelector('.btn');
+  if (btn) btn.textContent = 'Generating playlist...';
+  try {
+    const res = await fetch(`/api/playlist?type=${type}`);
+    const playlist = await res.json();
+    if (playlist.error) return;
+
+    const tracksHtml = (playlist.tracks||[]).slice(0,10).map((t,i)=>`
+      <div class="track-row">
+        <div class="track-num">${i+1}</div>
+        <div>
+          <div class="track-name">${t.name||'Unknown'}</div>
+          <div class="track-artist">${t.artist||''}</div>
+        </div>
+      </div>`).join('');
+
+    const playlistDiv = document.createElement('div');
+    playlistDiv.className = 'playlist-card';
+    playlistDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div>
+          <div style="font-size:10px;color:#7c6fff;letter-spacing:2px;font-weight:700;">WORKOUT PLAYLIST</div>
+          <div style="font-size:14px;font-weight:600;margin-top:2px;">${playlist.name||'Workout Mix'}</div>
+        </div>
+        ${playlist.playlist_url ? `<a href="${playlist.playlist_url}" target="_blank"><button class="btn-s" style="color:#1db954;">Open Spotify</button></a>` : ''}
+      </div>
+      ${tracksHtml}`;
+
+    document.getElementById('body').appendChild(playlistDiv);
+  } catch(e) {}
+}
+
+async function renderNutrition() {
+  setBody(`<div class="loading"><div class="spin"></div><div style="font-size:12px;color:var(--text3);">Loading nutrition data...</div></div>`);
+  try {
+    const res = await fetch('/api/nutrition');
+    const data = await res.json();
+    const logged = data.logged || {};
+    const targets = data.targets || {};
+    const w = state.whoop || {};
+    const rv = w.recovery?.recovery_score || 0;
+    const isTraining = rv >= 50;
+
+    const calLogged = logged.calories || 0;
+    const proteinLogged = logged.protein || 0;
+    const carbsLogged = logged.carbs || 0;
+    const fatLogged = logged.fat || 0;
+    const calTarget = targets.calories || 2300;
+    const proteinTarget = targets.protein || 176;
+    const carbsTarget = targets.carbs || 250;
+    const fatTarget = targets.fat || 65;
+
+    const calRemain = Math.max(0, calTarget - calLogged);
+    const proteinRemain = Math.max(0, proteinTarget - proteinLogged);
+
+    setBody(`
+      <div class="card" style="background:#0a1018;border-color:#0d2530;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="card-title" style="margin-bottom:0;">Daily Targets</div>
+          <span class="badge" style="background:${isTraining?'#00f5a022':'#f5c40022'};color:${isTraining?'#00f5a0':'#f5c400'};">${isTraining?'TRAINING DAY':'REST DAY'}</span>
+        </div>
+        <div class="g4" style="margin-bottom:14px;">
+          ${[['Calories',calTarget,'kcal','#ff9f43'],['Protein',proteinTarget+'g','target','#00f5a0'],['Carbs',carbsTarget+'g','target','#4ecdc4'],['Fat',fatTarget+'g','target','#ff6b35']].map(([l,v,u,c])=>`
+            <div style="text-align:center;background:var(--bg2);border-radius:9px;padding:9px 6px;">
+              <div style="font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;">${l}</div>
+              <div class="metric-val" style="font-size:16px;color:${c};">${v}</div>
+              <div class="metric-unit">${u}</div>
+            </div>`).join('')}
+        </div>
+
+        <div class="macro-row">
+          <div class="macro-label"><span>Calories</span><span class="macro-val" style="color:#ff9f43;">${calLogged} / ${calTarget} kcal</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(calLogged/calTarget*100,100)}%;background:#ff9f43;"></div></div>
+        </div>
+        <div class="macro-row">
+          <div class="macro-label"><span>Protein</span><span class="macro-val" style="color:#00f5a0;">${proteinLogged.toFixed(0)}g / ${proteinTarget}g</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(proteinLogged/proteinTarget*100,100)}%;background:#00f5a0;"></div></div>
+        </div>
+        <div class="macro-row">
+          <div class="macro-label"><span>Carbs</span><span class="macro-val" style="color:#4ecdc4;">${carbsLogged.toFixed(0)}g / ${carbsTarget}g</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(carbsLogged/carbsTarget*100,100)}%;background:#4ecdc4;"></div></div>
+        </div>
+        <div class="macro-row">
+          <div class="macro-label"><span>Fat</span><span class="macro-val" style="color:#ff6b35;">${fatLogged.toFixed(0)}g / ${fatTarget}g</span></div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(fatLogged/fatTarget*100,100)}%;background:#ff6b35;"></div></div>
+        </div>
+      </div>
+
+      <div class="card" style="background:#0a1a12;border-color:#0d3020;">
+        <div class="card-title">Remaining Today</div>
+        <div class="g2">
+          <div style="text-align:center;background:var(--bg2);border-radius:10px;padding:14px;">
+            <div style="font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Calories Left</div>
+            <div class="metric-val" style="font-size:28px;color:#ff9f43;">${calRemain}</div>
+            <div class="metric-unit">kcal</div>
+          </div>
+          <div style="text-align:center;background:var(--bg2);border-radius:10px;padding:14px;">
+            <div style="font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Protein Left</div>
+            <div class="metric-val" style="font-size:28px;color:#00f5a0;">${proteinRemain.toFixed(0)}g</div>
+            <div class="metric-unit">needed</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Supplement Stack</div>
+        ${[
+          {name:'Creatine Monohydrate',dose:'5g',time:'Any time — consistency matters',color:'#7c6fff'},
+          {name:'Whey Protein',dose:'1-2 scoops',time:'Post-workout or to hit protein goal',color:'#00f5a0'},
+          {name:'Vitamin D3 + K2',dose:'2000 IU',time:'Morning with food',color:'#ff9f43'},
+          {name:'Omega-3 Fish Oil',dose:'2-3g',time:'With meals — reduces inflammation',color:'#4ecdc4'},
+          {name:'Magnesium Glycinate',dose:'300mg',time:'Before bed — improves sleep & HRV',color:'#ff6b9d'},
+        ].map((s,i,arr)=>`
+          <div class="row" style="${i===arr.length-1?'border:none':''}">
+            <div>
+              <div style="font-size:13px;font-weight:500;color:${s.color};">${s.name}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px;">${s.time}</div>
+            </div>
+            <div style="font-size:12px;color:var(--text2);">${s.dose}</div>
+          </div>`).join('')}
+      </div>`);
+  } catch(e) {
+    setBody(`<div class="card"><div style="color:var(--red);">Error loading nutrition</div></div>`);
+  }
+}
+
+async function renderSleep() {
+  setBody(`<div class="loading"><div class="spin"></div><div style="font-size:12px;color:var(--text3);">Loading sleep data...</div></div>`);
+  try {
+    const res = await fetch('/api/sleep');
+    const plan = await res.json();
+    const w = state.whoop || {};
+    const sl = w.sleep || {};
+    const rec = w.recovery || {};
+    const hrv = Math.round(rec.hrv_rmssd_milli || 0);
+    const rhr = Math.round(rec.resting_heart_rate || 0);
+    const sleepScore = sl.sleep_performance_percentage || 0;
+    const stages = sl.stage_summary || {};
+    const total = stages.total_in_bed_time_milli || 1;
+    const deep = pct(stages.total_slow_wave_sleep_time_milli||0, total);
+    const rem = pct(stages.total_rem_sleep_time_milli||0, total);
+    const light = pct(stages.total_light_sleep_time_milli||0, total);
+    const awake = pct(stages.total_awake_time_milli||0, total);
+    const totalSleep = fmt(stages.total_in_bed_time_milli||0);
+
+    setBody(`
+      <div class="g2">
+        <div class="card" style="text-align:center;">
+          <div class="card-title">Sleep Score</div>
+          <div class="ring-wrap" style="justify-content:center;">
+            ${ring(sleepScore,100,'#4ecdc4',100,9)}
+            <div class="ring-inner">
+              <div class="metric-val" style="font-size:28px;color:#4ecdc4;">${sleepScore}</div>
+              <div class="metric-unit">%</div>
+            </div>
+          </div>
+          <div style="font-size:10px;color:#4ecdc4;font-weight:700;letter-spacing:1.5px;margin-top:8px;">${sleepScore>=85?'EXCELLENT':sleepScore>=70?'GOOD':sleepScore>=50?'FAIR':'POOR'}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">${totalSleep} total</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Vitals</div>
+          ${[['HRV',hrv,'ms','#7c6fff',hrv>=60?'EXCELLENT':hrv>=40?'GOOD':'LOW'],['Resting HR',rhr,'bpm','#ff6b9d',rhr<=55?'ATHLETIC':rhr<=65?'GOOD':'ELEVATED']].map(([l,v,u,c,tag])=>`
+            <div style="text-align:center;background:var(--bg2);border-radius:9px;padding:12px;margin-bottom:8px;">
+              <div style="font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;">${l}</div>
+              <div class="metric-val" style="font-size:26px;color:${c};margin:4px 0;">${v}</div>
+              <div style="font-size:9px;color:${c};">${tag}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Sleep Stages</div>
+        ${[['Deep (SWS)',deep,'#7c6fff','Optimal 20-25% — muscle repair & HRV boost'],['REM',rem,'#4ecdc4','Optimal 20-25% — memory & cognitive recovery'],['Light',light,'#3a7bd5','Transitional stages'],['Awake',awake,'#555','Under 5% is ideal']].map(([l,v,c,tip])=>`
+          <div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+              <span style="font-size:12px;font-weight:500;">${l}</span>
+              <span style="font-size:12px;color:${c};font-weight:700;">${v}%</span>
+            </div>
+            <div class="bar-bg" style="height:6px;"><div class="bar-fill" style="width:${v}%;background:${c};height:6px;"></div></div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px;">${tip}</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="card" style="background:#0a1218;border-color:#0d2030;">
+        <div class="card-title">Tonight's Sleep Plan</div>
+        ${plan.reason ? `<div style="font-size:12px;color:var(--text3);margin-bottom:10px;">${plan.reason}</div>` : ''}
+        <div class="g2" style="margin-bottom:12px;">
+          <div style="text-align:center;background:var(--bg2);border-radius:9px;padding:10px;">
+            <div style="font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;">Bedtime</div>
+            <div class="metric-val" style="font-size:20px;color:#4ecdc4;">${plan.recommended_bedtime||'10:30 PM'}</div>
+          </div>
+          <div style="text-align:center;background:var(--bg2);border-radius:9px;padding:10px;">
+            <div style="font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;">Wake Time</div>
+            <div class="metric-val" style="font-size:20px;color:#00f5a0;">${plan.recommended_wake_time||'6:30 AM'}</div>
+          </div>
+        </div>
+        ${(plan.schedule||[]).map((s,i,arr)=>`
+          <div class="sleep-item" style="${i===arr.length-1?'border:none':''}">
+            <div style="font-size:12px;font-weight:500;">${s.action}</div>
+            <div style="font-size:12px;color:${s.color};font-weight:700;min-width:65px;text-align:right;">${s.time}</div>
+          </div>`).join('')}
+      </div>`);
+  } catch(e) {
+    setBody(`<div class="card"><div style="color:var(--red);">Error loading sleep data</div></div>`);
+  }
+}
+
+async function renderInsights() {
+  setBody(`<div class="loading"><div class="spin"></div><div style="font-size:12px;color:var(--text3);">Analyzing your data with AI...</div></div>`);
+  try {
+    const res = await fetch('/api/insights');
+    const data = await res.json();
+    const w = state.whoop || {};
+    const rec = w.recovery || {};
+    const cycles = w.cycles || [];
+    const rv = rec.recovery_score || 0;
+    const hrv = Math.round(rec.hrv_rmssd_milli || 0);
+    const avgRec = cycles.length ? Math.round(cycles.reduce((a,c)=>a+(c?.score?.recovery_score||0),0)/cycles.length) : 0;
+    const avgStrain = cycles.length ? (cycles.reduce((a,c)=>a+(c?.score?.strain||0),0)/cycles.length).toFixed(1) : 0;
+
+    let insightsHtml = '';
+    try {
+      const raw = data.insights || '[]';
+      const clean = raw.replace(/```json|```/g,'').trim();
+      const insights = JSON.parse(clean);
+      const pc = {HIGH:'#ff4757',MEDIUM:'#f5c400',LOW:'#00f5a0'};
+      const cc = {RECOVERY:'#00f5a0',TRAINING:'#ff6b35',NUTRITION:'#ff9f43',SLEEP:'#7c6fff',PERFORMANCE:'#4ecdc4'};
+      insightsHtml = insights.map(ins=>`
+        <div class="ibox" style="background:${cc[ins.category]||'#4ecdc4'}08;border-color:${cc[ins.category]||'#4ecdc4'}33;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+            <div>
+              <div class="ibox-cat" style="color:${cc[ins.category]||'#4ecdc4'};">${ins.category}</div>
+              <div class="ibox-title">${ins.title}</div>
+            </div>
+            <span class="badge" style="background:${pc[ins.priority]||'#f5c400'}22;color:${pc[ins.priority]||'#f5c400'};">${ins.priority}</span>
+          </div>
+          <div class="ibox-text">${ins.text}</div>
+          <div class="ibox-action"><span style="color:var(--green);font-weight:700;">ACTION: </span>${ins.action}</div>
+        </div>`).join('');
+    } catch(e) {
+      insightsHtml = `<div class="card"><div style="font-size:13px;color:var(--text2);">${data.insights||'No insights available'}</div></div>`;
+    }
+
+    setBody(`
+      <div class="g4">
+        ${[['7D Avg Rec',avgRec+'%',rc(avgRec)],['7D Strain',avgStrain,sc(parseFloat(avgStrain))],['HRV',hrv+'ms','#7c6fff'],['Sleep',(w.sleep?.sleep_performance_percentage||0)+'%','#4ecdc4']].map(([l,v,c])=>`
+          <div class="metric">
+            <div class="metric-label">${l}</div>
+            <div class="metric-val" style="font-size:16px;color:${c};">${v}</div>
+          </div>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;">AI Analysis — Live Data</div>
+        <button class="btn-s" onclick="renderInsights()">↻ Regenerate</button>
+      </div>
+      ${insightsHtml}`);
+  } catch(e) {
+    setBody(`<div class="card"><div style="color:var(--red);">Error generating insights: ${e.message}</div></div>`);
+  }
+}
+
+function renderConnect() {
+  const connections = [
+    {name:'Whoop', desc:'Recovery, sleep, strain, workouts', connected: !!state.whoop, url:'/whoop/login', color:'#00f5a0'},
+    {name:'Spotify', desc:'Workout playlist generation', connected: !!state.spotify_connected, url:'/spotify/login', color:'#1db954'},
+    {name:'Google Calendar', desc:'Schedule workout windows', connected: false, url:'/google/login', color:'#4285f4'},
+    {name:'FatSecret', desc:'Nutrition tracking & food log', connected: false, url:'#', color:'#ff9f43'},
+  ];
+
+  setBody(`
+    <div class="brief">
+      <div class="brief-header">CONNECTED ACCOUNTS</div>
+      <div class="brief-content">Connect your accounts to unlock the full Athlete Intelligence experience.</div>
+    </div>
+    <div class="connect-card">
+      ${connections.map(c=>`
+        <div class="connect-item">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:${c.color};">${c.name}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">${c.desc}</div>
+          </div>
+          ${c.connected
+            ? `<span class="connect-status" style="color:var(--green);">✓ CONNECTED</span>`
+            : `<a href="${c.url}"><button class="btn-s" style="color:${c.color};border-color:${c.color}33;">Connect</button></a>`}
+        </div>`).join('')}
+    </div>
+
+    <div class="card" style="background:#0a0f1a;border-color:#0d1a30;">
+      <div class="card-title">About Athlete Intelligence</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+        Your complete personal fitness operating system. Combines Whoop biometrics, nutrition tracking, 
+        calendar scheduling, weather conditions, and Spotify to give you intelligent daily recommendations 
+        for training, nutrition, recovery, and sleep.
+      </div>
+    </div>`);
+}
+
+// Start
+loadAll();
+
+// Auto-refresh every 15 minutes
+setInterval(loadAll, 15 * 60 * 1000);
+</script>
+</body>
+</html>
