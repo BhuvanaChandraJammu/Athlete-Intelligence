@@ -715,7 +715,7 @@ function renderConnect() {
           </div>
           ${c.connected
             ? `<span class="connect-status" style="color:var(--green);">✓ CONNECTED</span>`
-            : `<a href="${c.url}"><button class="btn-s" style="color:${c.color};border-color:${c.color}33;">Connect</button></a>`}
+            : `<button class="btn-s" style="color:${c.color};border-color:${c.color}33;" onclick="window.location.href='${c.url}'">Connect</button>`}
         </div>`).join('')}
     </div>
 
