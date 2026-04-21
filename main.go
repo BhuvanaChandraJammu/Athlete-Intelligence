@@ -166,10 +166,15 @@ func handleAPIDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Spotify
-	if tokenStore.SpotifyAccessToken != "" {
-		result["spotify_connected"] = true
-	}
+	// Google
+if tokenStore.GoogleAccessToken != "" {
+    result["google_connected"] = true
+}
+
+// FatSecret
+if fatSecretKey != "" {
+    result["fatsecret_connected"] = true
+}
 
 	json.NewEncoder(w).Encode(result)
 }
