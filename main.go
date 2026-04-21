@@ -11,19 +11,19 @@ import (
 )
 
 var (
-	whoopClientID     = getEnv("WHOOP_CLIENT_ID", "")
-	whoopClientSecret = getEnv("WHOOP_CLIENT_SECRET", "")
-	spotifyClientID   = getEnv("SPOTIFY_CLIENT_ID", "")
-	spotifyClientSecret = getEnv("SPOTIFY_CLIENT_SECRET", "")
-	fatSecretKey      = getEnv("FATSECRET_CONSUMER_KEY", "")
-	fatSecretSecret   = getEnv("FATSECRET_CONSUMER_SECRET", "")
-	openWeatherKey    = getEnv("OPENWEATHER_API_KEY", "")
-	googleClientID    = getEnv("GOOGLE_CLIENT_ID", "")
-	googleClientSecret = getEnv("GOOGLE_CLIENT_SECRET", "")
-	anthropicKey      = getEnv("ANTHROPIC_API_KEY", "")
-	city              = getEnv("CITY", "Southfield")
-	cityCountry       = getEnv("CITY_COUNTRY", "US")
-	baseURL           = getEnv("BASE_URL", "https://athlete-intelligence.up.railway.app")
+	whoopClientID       string
+	whoopClientSecret   string
+	spotifyClientID     string
+	spotifyClientSecret string
+	fatSecretKey        string
+	fatSecretSecret     string
+	openWeatherKey      string
+	googleClientID      string
+	googleClientSecret  string
+	anthropicKey        string
+	city                string
+	cityCountry         string
+	baseURL             string
 )
 
 func getEnv(key, fallback string) string {
@@ -31,6 +31,25 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func initConfig() {
+	whoopClientID       = os.Getenv("WHOOP_CLIENT_ID")
+	whoopClientSecret   = os.Getenv("WHOOP_CLIENT_SECRET")
+	spotifyClientID     = os.Getenv("SPOTIFY_CLIENT_ID")
+	spotifyClientSecret = os.Getenv("SPOTIFY_CLIENT_SECRET")
+	fatSecretKey        = os.Getenv("FATSECRET_CONSUMER_KEY")
+	fatSecretSecret     = os.Getenv("FATSECRET_CONSUMER_SECRET")
+	openWeatherKey      = os.Getenv("OPENWEATHER_API_KEY")
+	googleClientID      = os.Getenv("GOOGLE_CLIENT_ID")
+	googleClientSecret  = os.Getenv("GOOGLE_CLIENT_SECRET")
+	anthropicKey        = os.Getenv("ANTHROPIC_API_KEY")
+	city                = getEnv("CITY", "Southfield")
+	cityCountry         = getEnv("CITY_COUNTRY", "US")
+	baseURL             = getEnv("BASE_URL", "https://athlete-intelligence-production-0c58.up.railway.app")
+
+	log.Printf("✅ Config loaded — Whoop: %s, Spotify: %s, Google: %s, BaseURL: %s",
+		whoopClientID, spotifyClientID, googleClientID, baseURL)
 }
 
 type TokenStore struct {
@@ -62,6 +81,7 @@ func saveTokens() {
 }
 
 func main() {
+	initConfig()
 	loadTokens()
 
 	mux := http.NewServeMux()
@@ -313,11 +333,11 @@ func generateInsights(ctx context.Context, whoopData map[string]interface{}, wea
 	}
 
 	calConsumed := 0
-proteinConsumed := 0.0
-if nutrition != nil {
-    calConsumed = int(nutrition.Calories)
-    proteinConsumed = float64(nutrition.Protein)
-}
+	proteinConsumed := 0.0
+	if nutrition != nil {
+		calConsumed = nutrition.Calories
+		proteinConsumed = nutrition.Protein
+	}
 
 	prompt := fmt.Sprintf(`You are an elite sports scientist and personal fitness coach. Analyze this athlete's data and provide 5 specific, actionable insights.
 
