@@ -697,9 +697,9 @@ function renderConnect() {
   const connections = [
     {name:'Whoop', desc:'Recovery, sleep, strain, workouts', connected: !!state.whoop, url:'/whoop/login', color:'#00f5a0'},
     {name:'Spotify', desc:'Workout playlist generation', connected: !!state.spotify_connected, url:'/spotify/login', color:'#1db954'},
-    {name:'Google Calendar', desc:'Schedule workout windows', connected: false, url:'/google/login', color:'#4285f4'},
-    {name:'FatSecret', desc:'Nutrition tracking & food log', connected: false, url:'#', color:'#ff9f43'},
-  ];
+    {name:'Google Calendar', desc:'Schedule workout windows', connected: !!state.google_connected, url:'/google/login', color:'#4285f4'},
+    {name:'FatSecret', desc:'Nutrition tracking & food log', connected: !!state.fatsecret_connected, url:'/fatsecret/login', color:'#ff9f43'},
+];
 
   setBody(`
     <div class="brief">
