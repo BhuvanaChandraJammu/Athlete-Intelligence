@@ -316,7 +316,7 @@ func generateInsights(ctx context.Context, whoopData map[string]interface{}, wea
 	proteinConsumed := 0.0
 	if nutrition != nil {
 		calConsumed = nutrition.Calories
-		proteinConsumed = nutrition.Protein
+		proteinConsumed = float64(nutrition.Protein)
 	}
 
 	prompt := fmt.Sprintf(`You are an elite sports scientist and personal fitness coach. Analyze this athlete's data and provide 5 specific, actionable insights.
