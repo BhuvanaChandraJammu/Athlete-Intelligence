@@ -13,12 +13,13 @@ import (
 const whoopBaseURL = "https://api.prod.whoop.com"
 
 func handleWhoopLogin(w http.ResponseWriter, r *http.Request) {
-	state := fmt.Sprintf("%d", time.Now().UnixNano())
+	state := "whoopauth1"
+	redirectURI := baseURL + "/whoop/callback"
 	authURL := fmt.Sprintf(
-		"%s/oauth/oauth2/auth?response_type=code&client_id=%s&redirect_uri=%s/whoop/callback&scope=%s&state=%s",
+		"%s/oauth/oauth2/auth?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&state=%s",
 		whoopBaseURL,
 		whoopClientID,
-		url.QueryEscape(baseURL),
+		url.QueryEscape(redirectURI),
 		url.QueryEscape("read:recovery read:sleep read:strain read:workout read:cycles read:profile read:body_measurement"),
 		state,
 	)
@@ -28,7 +29,9 @@ func handleWhoopLogin(w http.ResponseWriter, r *http.Request) {
 func handleWhoopCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		http.Error(w, "No code received", 400)
+		errMsg := r.URL.Query().Get("error")
+		errDesc := r.URL.Query().Get("error_description")
+		http.Error(w, fmt.Sprintf("No code received. Error: %s - %s", errMsg, errDesc), 400)
 		return
 	}
 
@@ -38,22 +41,30 @@ func handleWhoopCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenStore.WhoopAccessToken = tokens["access_token"].(string)
+	if at, ok := tokens["access_token"].(string); ok {
+		tokenStore.WhoopAccessToken = at
+	} else {
+		http.Error(w, fmt.Sprintf("No access token in response: %v", tokens), 500)
+		return
+	}
+
 	if rt, ok := tokens["refresh_token"].(string); ok {
 		tokenStore.WhoopRefreshToken = rt
 	}
-	expiresIn := int(tokens["expires_in"].(float64))
-	tokenStore.WhoopExpiry = time.Now().Add(time.Duration(expiresIn) * time.Second)
+	if ei, ok := tokens["expires_in"].(float64); ok {
+		tokenStore.WhoopExpiry = time.Now().Add(time.Duration(ei) * time.Second)
+	}
 	saveTokens()
 
 	http.Redirect(w, r, "/?connected=whoop", http.StatusTemporaryRedirect)
 }
 
 func exchangeWhoopCode(code string) (map[string]interface{}, error) {
+	redirectURI := baseURL + "/whoop/callback"
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", code)
-	data.Set("redirect_uri", baseURL+"/whoop/callback")
+	data.Set("redirect_uri", redirectURI)
 	data.Set("client_id", whoopClientID)
 	data.Set("client_secret", whoopClientSecret)
 
@@ -97,20 +108,9 @@ func refreshWhoopToken() error {
 	return nil
 }
 
-type WhoopDashboard struct {
-	Recovery  map[string]interface{} `json:"recovery"`
-	Sleep     map[string]interface{} `json:"sleep"`
-	Strain    float64                `json:"strain"`
-	Cycles    []map[string]interface{} `json:"cycles"`
-	Workouts  []map[string]interface{} `json:"workouts"`
-	Profile   map[string]interface{} `json:"profile"`
-	Body      map[string]interface{} `json:"body"`
-}
-
 func fetchWhoopDashboard(ctx context.Context, token string) (map[string]interface{}, error) {
 	result := map[string]interface{}{}
 
-	// Fetch recovery
 	recovery, err := whoopGet(ctx, token, "/developer/v2/recovery?limit=1")
 	if err == nil {
 		if records, ok := recovery["records"].([]interface{}); ok && len(records) > 0 {
@@ -122,14 +122,12 @@ func fetchWhoopDashboard(ctx context.Context, token string) (map[string]interfac
 		}
 	}
 
-	// Fetch sleep
 	sleep, err := whoopGet(ctx, token, "/developer/v2/activity/sleep?limit=1")
 	if err == nil {
 		if records, ok := sleep["records"].([]interface{}); ok && len(records) > 0 {
 			if sl, ok := records[0].(map[string]interface{}); ok {
 				if score, ok := sl["score"].(map[string]interface{}); ok {
 					result["sleep"] = score
-					// Get sleep times
 					result["sleep_start"] = sl["start"]
 					result["sleep_end"] = sl["end"]
 				}
@@ -137,11 +135,9 @@ func fetchWhoopDashboard(ctx context.Context, token string) (map[string]interfac
 		}
 	}
 
-	// Fetch cycles (7 days)
 	cycles, err := whoopGet(ctx, token, "/developer/v2/cycle?limit=7")
 	if err == nil {
 		result["cycles"] = cycles["records"]
-		// Get today's strain
 		if records, ok := cycles["records"].([]interface{}); ok && len(records) > 0 {
 			if cy, ok := records[0].(map[string]interface{}); ok {
 				if score, ok := cy["score"].(map[string]interface{}); ok {
@@ -153,19 +149,16 @@ func fetchWhoopDashboard(ctx context.Context, token string) (map[string]interfac
 		}
 	}
 
-	// Fetch workouts
 	workouts, err := whoopGet(ctx, token, "/developer/v2/activity/workout?limit=10")
 	if err == nil {
 		result["workouts"] = workouts["records"]
 	}
 
-	// Fetch profile
 	profile, err := whoopGet(ctx, token, "/developer/v2/user/profile/basic")
 	if err == nil {
 		result["profile"] = profile
 	}
 
-	// Fetch body measurements
 	body, err := whoopGet(ctx, token, "/developer/v2/user/measurement/body")
 	if err == nil {
 		result["body"] = body
@@ -197,7 +190,6 @@ func whoopGet(ctx context.Context, token, path string) (map[string]interface{}, 
 	return result, nil
 }
 
-// Helper to get last trained muscle groups from workout history
 func getTrainedMuscles(workouts []interface{}) map[string]time.Time {
 	muscles := map[string]time.Time{}
 	muscleMap := map[string][]string{
