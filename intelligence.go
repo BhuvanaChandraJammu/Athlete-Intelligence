@@ -15,18 +15,19 @@ import (
 // ============================================================
 
 type CalendarEvent struct {
-	Title     string    `json:"title"`
-	Start     time.Time `json:"start"`
-	End       time.Time `json:"end"`
-	Duration  int       `json:"duration_minutes"`
+	Title    string    `json:"title"`
+	Start    time.Time `json:"start"`
+	End      time.Time `json:"end"`
+	Duration int       `json:"duration_minutes"`
 }
 
 func handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	scopes := "https://www.googleapis.com/auth/calendar.readonly"
+	redirectURI := baseURL + "/google/callback"
 	authURL := fmt.Sprintf(
 		"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&access_type=offline&prompt=consent",
 		googleClientID,
-		url.QueryEscape(baseURL+"/google/callback"),
+		url.QueryEscape(redirectURI),
 		url.QueryEscape(scopes),
 	)
 	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
@@ -35,7 +36,8 @@ func handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		http.Error(w, "No code", 400)
+		errMsg := r.URL.Query().Get("error")
+		http.Error(w, "No code received. Error: "+errMsg, 400)
 		return
 	}
 
@@ -45,7 +47,9 @@ func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenStore.GoogleAccessToken = tokens["access_token"].(string)
+	if at, ok := tokens["access_token"].(string); ok {
+		tokenStore.GoogleAccessToken = at
+	}
 	if rt, ok := tokens["refresh_token"].(string); ok {
 		tokenStore.GoogleRefreshToken = rt
 	}
@@ -56,11 +60,12 @@ func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func exchangeGoogleCode(code string) (map[string]interface{}, error) {
+	redirectURI := baseURL + "/google/callback"
 	data := url.Values{}
 	data.Set("code", code)
 	data.Set("client_id", googleClientID)
 	data.Set("client_secret", googleClientSecret)
-	data.Set("redirect_uri", baseURL+"/google/callback")
+	data.Set("redirect_uri", redirectURI)
 	data.Set("grant_type", "authorization_code")
 
 	resp, err := http.PostForm("https://oauth2.googleapis.com/token", data)
@@ -153,36 +158,36 @@ func fetchCalendarEvents(ctx context.Context, token string) ([]CalendarEvent, er
 // ============================================================
 
 type WorkoutPlan struct {
-	Recommended       bool          `json:"recommended"`
-	BestWindow        string        `json:"best_window"`
-	Reason            string        `json:"reason"`
-	Intensity         string        `json:"intensity"`
-	Focus             string        `json:"focus"`
-	Exercises         []Exercise    `json:"exercises"`
-	PreWorkoutMeal    string        `json:"pre_workout_meal"`
-	PostWorkoutMeal   string        `json:"post_workout_meal"`
-	PreWorkoutTime    string        `json:"pre_workout_time"`
-	PostWorkoutTime   string        `json:"post_workout_time"`
-	Warnings          []string      `json:"warnings"`
-	WeatherNote       string        `json:"weather_note"`
+	Recommended    bool       `json:"recommended"`
+	BestWindow     string     `json:"best_window"`
+	Reason         string     `json:"reason"`
+	Intensity      string     `json:"intensity"`
+	Focus          string     `json:"focus"`
+	Exercises      []Exercise `json:"exercises"`
+	PreWorkoutMeal string     `json:"pre_workout_meal"`
+	PostWorkoutMeal string    `json:"post_workout_meal"`
+	PreWorkoutTime string     `json:"pre_workout_time"`
+	PostWorkoutTime string    `json:"post_workout_time"`
+	Warnings       []string   `json:"warnings"`
+	WeatherNote    string     `json:"weather_note"`
 }
 
 type Exercise struct {
-	Name       string `json:"name"`
-	Sets       string `json:"sets"`
-	Reps       string `json:"reps"`
-	Tip        string `json:"tip"`
+	Name        string `json:"name"`
+	Sets        string `json:"sets"`
+	Reps        string `json:"reps"`
+	Tip         string `json:"tip"`
 	MuscleGroup string `json:"muscle_group"`
 }
 
 type SleepPlan struct {
-	RecommendedBedtime   string `json:"recommended_bedtime"`
-	RecommendedWakeTime  string `json:"recommended_wake_time"`
-	TargetDuration       string `json:"target_duration"`
-	WindDownTime         string `json:"wind_down_time"`
-	LastMealTime         string `json:"last_meal_time"`
-	Reason               string `json:"reason"`
-	Schedule             []SleepScheduleItem `json:"schedule"`
+	RecommendedBedtime  string              `json:"recommended_bedtime"`
+	RecommendedWakeTime string              `json:"recommended_wake_time"`
+	TargetDuration      string              `json:"target_duration"`
+	WindDownTime        string              `json:"wind_down_time"`
+	LastMealTime        string              `json:"last_meal_time"`
+	Reason              string              `json:"reason"`
+	Schedule            []SleepScheduleItem `json:"schedule"`
 }
 
 type SleepScheduleItem struct {
@@ -194,7 +199,6 @@ type SleepScheduleItem struct {
 func generateWorkoutPlan(whoopData map[string]interface{}, weather *WeatherData, nutrition *NutritionData, events []CalendarEvent) *WorkoutPlan {
 	plan := &WorkoutPlan{}
 
-	// Get recovery score
 	recovery := 0
 	strain := 0.0
 	if whoopData != nil {
@@ -208,7 +212,6 @@ func generateWorkoutPlan(whoopData map[string]interface{}, weather *WeatherData,
 		}
 	}
 
-	// Step 1: Recovery gate
 	if recovery >= 67 {
 		plan.Intensity = "HIGH"
 		plan.Recommended = true
@@ -221,10 +224,8 @@ func generateWorkoutPlan(whoopData map[string]interface{}, weather *WeatherData,
 		plan.Reason = fmt.Sprintf("Recovery is only %d%% — rest or light mobility today to protect your HRV.", recovery)
 	}
 
-	// Step 2: Find best workout window from calendar
 	plan.BestWindow = findBestWorkoutWindow(events)
 
-	// Step 3: Weather check
 	if weather != nil {
 		plan.WeatherNote = weather.Recommendation
 		if !weather.IsGoodForOutdoor {
@@ -232,15 +233,11 @@ func generateWorkoutPlan(whoopData map[string]interface{}, weather *WeatherData,
 		}
 	}
 
-	// Step 4: Nutrition timing
 	plan.PreWorkoutMeal = "40g carbs + 20g protein (rice cakes + whey shake or banana + Greek yogurt)"
 	plan.PostWorkoutMeal = "40g fast carbs + 35g protein (whey shake + banana)"
-
-	// Calculate pre/post workout times based on best window
 	plan.PreWorkoutTime = "90 minutes before your workout"
 	plan.PostWorkoutTime = "Within 30 minutes after workout"
 
-	// Step 5: Muscle group selection
 	trainedMuscles := map[string]time.Time{}
 	if whoopData != nil {
 		if workouts, ok := whoopData["workouts"].([]interface{}); ok {
@@ -265,10 +262,7 @@ func findBestWorkoutWindow(events []CalendarEvent) string {
 		return "6:00 PM — 7:30 PM (no meetings found, evening slot suggested)"
 	}
 
-	// Find gaps > 90 minutes between events
 	now := time.Now()
-	slots := []string{}
-
 	checkTimes := []time.Time{
 		time.Date(now.Year(), now.Month(), now.Day(), 6, 0, 0, 0, now.Location()),
 		time.Date(now.Year(), now.Month(), now.Day(), 12, 0, 0, 0, now.Location()),
@@ -283,21 +277,17 @@ func findBestWorkoutWindow(events []CalendarEvent) string {
 		slotEnd := slot.Add(90 * time.Minute)
 		available := true
 		for _, event := range events {
-			// Check if event overlaps with slot
 			if event.Start.Before(slotEnd) && event.End.After(slot) {
 				available = false
 				break
 			}
 		}
 		if available {
-			slots = append(slots, slot.Format("3:04 PM")+" — "+slotEnd.Format("3:04 PM"))
+			return slot.Format("3:04 PM") + " — " + slotEnd.Format("3:04 PM")
 		}
 	}
 
-	if len(slots) == 0 {
-		return "No clear windows today — consider a shorter 45-min session or reschedule"
-	}
-	return slots[0]
+	return "No clear windows today — consider a shorter 45-min session or reschedule"
 }
 
 func selectMuscleGroup(trained map[string]time.Time, recovery int, strain float64) (string, []Exercise, []string) {
@@ -305,7 +295,6 @@ func selectMuscleGroup(trained map[string]time.Time, recovery int, strain float6
 	now := time.Now()
 	minRestHours := 48.0
 
-	// Check which muscles need rest
 	restedMuscles := []string{}
 	allMuscles := []string{"chest", "back", "legs", "shoulders", "arms"}
 
@@ -322,7 +311,6 @@ func selectMuscleGroup(trained map[string]time.Time, recovery int, strain float6
 		}
 	}
 
-	// Pick priority muscle
 	priority := []string{"legs", "back", "chest", "shoulders", "arms"}
 	focus := "Full Body"
 	for _, p := range priority {
@@ -394,11 +382,9 @@ func getExercisesForMuscle(muscle string, recovery int) []Exercise {
 func generateSleepPlan(whoopData map[string]interface{}, events []CalendarEvent) *SleepPlan {
 	plan := &SleepPlan{}
 
-	// Base sleep need
-	sleepNeed := 8.0 * 60 // minutes
+	sleepNeed := 8.0 * 60
 
 	if whoopData != nil {
-		// Adjust for strain
 		if strain, ok := whoopData["strain"].(float64); ok {
 			if strain > 14 {
 				sleepNeed += 30
@@ -408,14 +394,12 @@ func generateSleepPlan(whoopData map[string]interface{}, events []CalendarEvent)
 		}
 	}
 
-	// Find earliest meeting tomorrow
 	now := time.Now()
 	tomorrow := now.Add(24 * time.Hour)
 	wakeTime := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 6, 30, 0, 0, now.Location())
 
 	for _, event := range events {
 		if event.Start.After(tomorrow.Add(-2*time.Hour)) && event.Start.Hour() < 9 {
-			// Early meeting tomorrow
 			wakeTime = event.Start.Add(-90 * time.Minute)
 		}
 	}
