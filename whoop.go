@@ -20,7 +20,7 @@ func handleWhoopLogin(w http.ResponseWriter, r *http.Request) {
 		whoopBaseURL,
 		whoopClientID,
 		url.QueryEscape(redirectURI),
-		url.QueryEscape("read:recovery read:sleep read:strain read:workout read:cycles read:profile read:body_measurement"),
+		url.QueryEscape("read:recovery read:sleep read:strain read:workout read:profile read:body_measurement"),
 		state,
 	)
 	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
